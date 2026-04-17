@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { Product } from '../data/products';
 import { toast } from 'sonner';
 
@@ -50,13 +50,25 @@ const initialBehavior: BehaviorData = {
 
 export function BehaviorProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem('neurocart-cart');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('neurocart-cart');
+      return saved ? (JSON.parse(saved) as CartItem[]) : [];
+    } catch {
+      // Corrupted storage — reset safely
+      localStorage.removeItem('neurocart-cart');
+      return [];
+    }
   });
 
   const [behavior, setBehavior] = useState<BehaviorData>(() => {
-    const saved = localStorage.getItem('neurocart-behavior');
-    return saved ? JSON.parse(saved) : initialBehavior;
+    try {
+      const saved = localStorage.getItem('neurocart-behavior');
+      return saved ? (JSON.parse(saved) as BehaviorData) : initialBehavior;
+    } catch {
+      // Corrupted storage — reset safely
+      localStorage.removeItem('neurocart-behavior');
+      return initialBehavior;
+    }
   });
 
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
@@ -252,17 +264,14 @@ export function BehaviorProvider({ children }: { children: ReactNode }) {
     toast.info('Coupon removed');
   };
 
-  const cartTotal = cart.reduce((sum, item) => {
-    let price = item.product.price * item.quantity;
-    if (appliedCoupon === 'SAVE10') {
-      price *= 0.9;
-    } else if (appliedCoupon === 'WELCOME15') {
-      price *= 0.85;
-    } else if (appliedCoupon === 'FIRST20') {
-      price *= 0.8;
-    }
-    return sum + price;
-  }, 0);
+  /** Memoised cart total — only recalculates when cart items or coupon change */
+  const cartTotal = useMemo(() => {
+    const subtotal = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    if (appliedCoupon === 'SAVE10') return subtotal * 0.9;
+    if (appliedCoupon === 'WELCOME15') return subtotal * 0.85;
+    if (appliedCoupon === 'FIRST20') return subtotal * 0.8;
+    return subtotal;
+  }, [cart, appliedCoupon]);
 
   return (
     <BehaviorContext.Provider

@@ -33,6 +33,13 @@ function LayoutContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
+      {/* Skip to main content - Accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-orange-500 focus:text-white focus:rounded-lg focus:font-medium"
+      >
+        Skip to main content
+      </a>
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0a0a0a]/80 backdrop-blur-xl">
         <div className="container mx-auto px-4">
@@ -51,11 +58,12 @@ function LayoutContent() {
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
               {navLinks.map(({ path, label, icon: Icon }) => (
                 <Link
                   key={path}
                   to={path}
+                  aria-current={isActive(path) ? 'page' : undefined}
                   className={`flex items-center gap-2 text-sm font-medium transition-colors ${
                     isActive(path)
                       ? 'text-orange-400'
@@ -71,7 +79,12 @@ function LayoutContent() {
             {/* Cart & Mobile Menu */}
             <div className="flex items-center gap-4">
               <Link to="/cart">
-                <Button variant="outline" size="sm" className="relative border-orange-500/30 hover:border-orange-500">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="relative border-orange-500/30 hover:border-orange-500"
+                  aria-label={cartCount > 0 ? `Open cart, ${cartCount} item${cartCount > 1 ? 's' : ''}` : 'Open cart'}
+                >
                   <ShoppingCart className="h-4 w-4" />
                   {cartCount > 0 && (
                     <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-xs font-bold">
@@ -125,7 +138,7 @@ function LayoutContent() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="min-h-[calc(100vh-4rem)]">
+      <main id="main-content" className="min-h-[calc(100vh-4rem)]" role="main">
         <Outlet />
       </main>
 

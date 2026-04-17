@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Bot, User, Sparkles, ShoppingBag, TrendingUp, Tag } from 'lucide-react';
+import { Send, Bot, User, Sparkles, ShoppingBag, TrendingUp, Tag, Zap } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Card } from '../components/ui/card';
 import { products } from '../data/products';
 import { useBehavior } from '../contexts/BehaviorContext';
+import { callGeminiAPI, sanitizeInput } from '../utils/gemini';
 
 interface Message {
   id: string;
@@ -21,7 +22,7 @@ export function AIAssistant() {
     {
       id: '1',
       type: 'ai',
-      content: "👋 Hi! I'm your NeuroCart AI shopping assistant. I can help you:\n\n• Find products within your budget\n• Compare similar products\n• Get personalized recommendations\n• Find the best deals\n\nWhat are you looking for today?",
+      content: "👋 Hi! I'm your NeuroCart AI shopping assistant powered by Google Gemini. I can help you:\n\n• Find products within your budget\n• Compare similar products\n• Get personalized recommendations\n• Find the best deals\n\nWhat are you looking for today?",
       timestamp: Date.now(),
       suggestions: [
         'Show me budget phones under ₹20,000',
@@ -33,8 +34,9 @@ export function AIAssistant() {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isGeminiActive, setIsGeminiActive] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { behavior, addToCart } = useBehavior();
+  const { behavior, addToCart, cart } = useBehavior();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -154,8 +156,9 @@ export function AIAssistant() {
     };
   };
 
-  const handleSend = (messageText?: string) => {
-    const text = messageText || input;
+  const handleSend = async (messageText?: string) => {
+    const rawText = messageText || input;
+    const text = sanitizeInput(rawText);
     if (!text.trim()) return;
 
     // Add user message
@@ -170,12 +173,36 @@ export function AIAssistant() {
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI thinking
-    setTimeout(() => {
+    // Get top viewed category for context
+    const topViewedCategory = Object.keys(behavior.productViews)
+      .map(id => products.find(p => p.id === id)?.category)
+      .filter(Boolean)[0];
+
+    // Try Gemini API first, fall back to local logic
+    const geminiResult = await callGeminiAPI(text, {
+      cartItemCount: cart.reduce((s, i) => s + i.quantity, 0),
+      recentSearches: behavior.searchHistory.slice(0, 3),
+      topViewedCategory,
+    });
+
+    setIsGeminiActive(geminiResult.fromGemini);
+
+    if (geminiResult.fromGemini && geminiResult.text) {
+      // Use real Gemini response
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: `✨ ${geminiResult.text}`,
+        timestamp: Date.now(),
+      };
+      setMessages(prev => [...prev, aiMessage]);
+    } else {
+      // Fall back to local rule-based response
       const aiResponse = generateAIResponse(text);
       setMessages(prev => [...prev, aiResponse]);
-      setIsTyping(false);
-    }, 1000);
+    }
+
+    setIsTyping(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -192,10 +219,17 @@ export function AIAssistant() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-4xl font-bold mb-2">
-          AI <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">Assistant</span>
-        </h1>
-        <p className="text-gray-400">Your intelligent shopping companion powered by Gemini AI</p>
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-4xl font-bold">
+            AI <span className="bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">Assistant</span>
+          </h1>
+          {isGeminiActive && (
+            <span className="flex items-center gap-1 text-xs bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-1 rounded-full">
+              <Zap className="h-3 w-3" /> Gemini Active
+            </span>
+          )}
+        </div>
+        <p className="text-gray-400">Your intelligent shopping companion powered by Google Gemini AI</p>
       </motion.div>
 
       {/* Chat Container */}
