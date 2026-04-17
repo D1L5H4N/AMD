@@ -2,7 +2,21 @@
 
 **AI-Powered Cart Recovery & Conversion Engine for Retailers**
 
-![Version](https://img.shields.io/badge/version-1.0.0-orange) ![License](https://img.shields.io/badge/license-MIT-blue) ![Hackathon](https://img.shields.io/badge/hackathon-ready-green)
+![Version](https://img.shields.io/badge/version-1.0.0-orange) ![License](https://img.shields.io/badge/license-MIT-blue) ![Hackathon](https://img.shields.io/badge/hackathon-ready-green) ![Demo](https://img.shields.io/badge/demo-live-brightgreen)
+
+---
+
+## 🎬 Demo Video
+
+> **Watch the 60-second product demo below:**
+
+[![NeuroCart AI Demo Video](https://img.shields.io/badge/▶%20Watch%20Demo-Google%20Drive-blue?style=for-the-badge&logo=googledrive)](https://drive.google.com/file/d/1DdqPTNFCU760KvGNmugSXcQhPlL0kxdZ/view?usp=drive_link)
+
+🔗 **Direct Link:** https://drive.google.com/file/d/1DdqPTNFCU760KvGNmugSXcQhPlL0kxdZ/view?usp=drive_link
+
+🌐 **Live Deployed App:** https://neurocart-ai-887181387648.europe-west1.run.app
+
+🐙 **GitHub Repository:** https://github.com/D1L5H4N/AMD
 
 ---
 
